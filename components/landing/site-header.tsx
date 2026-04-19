@@ -16,14 +16,14 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false)
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-[60]">
+    <header className="fixed top-0 left-0 right-0 z-[60] font-geist">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-4">
         <div className="flex items-center justify-between gap-4 rounded-full border border-border bg-popover/70 backdrop-blur-xl px-4 sm:px-6 py-2.5 shadow-lg shadow-black/20">
           <Link href="/" className="flex items-center gap-2 font-semibold text-foreground">
             <span className="grid place-items-center w-8 h-8 rounded-full bg-primary text-primary-foreground">
               <Radar className="w-4 h-4" />
             </span>
-            <span className="font-mono tracking-tight">
+            <span className="tracking-tight">
               Global<span className="text-primary">Tracker</span>
             </span>
           </Link>

@@ -42,7 +42,7 @@ const nav = [
 
 export function SiteFooter() {
   return (
-    <footer className="relative z-30 border-t border-border bg-popover/80 backdrop-blur-xl">
+    <footer className="relative z-30 border-t border-border bg-popover/80 font-geist backdrop-blur-xl">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid gap-12 lg:grid-cols-[1.3fr_2fr]">
           <div className="space-y-6">
@@ -50,7 +50,7 @@ export function SiteFooter() {
               <span className="grid place-items-center w-9 h-9 rounded-full bg-primary text-primary-foreground">
                 <Radar className="w-4 h-4" />
               </span>
-              <span className="font-mono tracking-tight text-lg">
+              <span className="tracking-tight text-lg">
                 Global<span className="text-primary">Tracker</span>
               </span>
             </Link>

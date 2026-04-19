@@ -3,6 +3,11 @@
 import type React from "react"
 import { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import Globe from "@/components/ui/globe"
+import { FaqAccordionSection } from "@/components/ui/faq-accordion"
+import {
+  AnimatedTestimonials,
+  defaultSupplyChainTestimonials,
+} from "@/components/ui/animated-testimonials"
 import { cn } from "@/lib/utils"
 
 interface ScrollGlobeProps {
@@ -13,6 +18,7 @@ interface ScrollGlobeProps {
     subtitle?: string
     description: string
     align?: "left" | "center" | "right"
+    variant?: "default" | "faq" | "testimonials"
     features?: { title: string; description: string }[]
     actions?: {
       label: string
@@ -37,6 +43,8 @@ const defaultGlobeConfig = {
     { top: "25%", left: "50%", scale: 0.9 },
     { top: "55%", left: "20%", scale: 1.2 },
     { top: "50%", left: "50%", scale: 1.8 },
+    { top: "42%", left: "72%", scale: 1.25 },
+    { top: "48%", left: "28%", scale: 1.2 },
   ],
 }
 
@@ -135,7 +143,7 @@ export function ScrollGlobe({
             transform: `scaleX(${scrollProgress})`,
             transformOrigin: "left center",
             transition: "transform 0.15s ease-out",
-            filter: "drop-shadow(0 0 4px rgba(0,196,204,0.6))",
+            filter: "drop-shadow(0 0 4px rgba(37,99,235,0.55))",
           }}
         />
       </div>
@@ -188,7 +196,7 @@ export function ScrollGlobe({
         className="fixed z-10 pointer-events-none will-change-transform transition-all duration-[1400ms] ease-[cubic-bezier(0.23,1,0.32,1)]"
         style={{
           transform: globeTransform,
-          filter: `opacity(${activeSection === 3 ? 0.5 : 0.9})`,
+          filter: `opacity(${activeSection === sections.length - 1 ? 0.5 : 0.9})`,
         }}
       >
         <div className="scale-75 sm:scale-90 lg:scale-100">
@@ -200,7 +208,7 @@ export function ScrollGlobe({
       {sections.map((section, index) => (
         <section
           key={section.id}
-          ref={(el) => {
+          ref={(el: HTMLDivElement | null) => {
             sectionRefs.current[index] = el
           }}
           className={cn(
@@ -211,7 +219,16 @@ export function ScrollGlobe({
             section.align !== "center" && section.align !== "right" && "items-start text-left",
           )}
         >
-          <div className="w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-3xl will-change-transform">
+          <div
+            className={cn(
+              "w-full will-change-transform",
+              section.variant === "testimonials"
+                ? "max-w-6xl xl:max-w-7xl"
+                : section.variant === "faq"
+                  ? "max-w-3xl sm:max-w-3xl"
+                  : "max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-3xl",
+            )}
+          >
             {section.badge && (
               <div
                 className={cn(
@@ -224,37 +241,61 @@ export function ScrollGlobe({
               </div>
             )}
 
-            <h1
-              className={cn(
-                "font-semibold mb-6 leading-[1.05] tracking-tight text-balance",
-                index === 0
-                  ? "text-4xl sm:text-5xl md:text-6xl lg:text-7xl"
-                  : "text-3xl sm:text-4xl md:text-5xl lg:text-6xl",
-              )}
-            >
-              {section.subtitle ? (
-                <>
-                  <span className="block text-foreground">{section.title}</span>
-                  <span className="block text-primary">{section.subtitle}</span>
-                </>
-              ) : (
-                <span className="text-foreground">{section.title}</span>
-              )}
-            </h1>
+            {section.variant !== "testimonials" ? (
+              <>
+                <h1
+                  className={cn(
+                    "font-semibold mb-6 leading-[1.05] tracking-tight text-balance",
+                    index === 0
+                      ? "text-4xl sm:text-5xl md:text-6xl lg:text-7xl"
+                      : "text-3xl sm:text-4xl md:text-5xl lg:text-6xl",
+                  )}
+                >
+                  {section.subtitle ? (
+                    <>
+                      <span className="block text-foreground">{section.title}</span>
+                      <span className="block text-primary">{section.subtitle}</span>
+                    </>
+                  ) : (
+                    <span className="text-foreground">{section.title}</span>
+                  )}
+                </h1>
 
-            <p
-              className={cn(
-                "text-muted-foreground leading-relaxed mb-8 text-base sm:text-lg font-light text-pretty",
-                section.align === "center" && "mx-auto",
-              )}
-            >
-              {section.description}
-            </p>
+                <p
+                  className={cn(
+                    "text-muted-foreground mb-8 text-base font-light text-pretty leading-relaxed sm:text-lg",
+                    section.align === "center" && "mx-auto",
+                  )}
+                >
+                  {section.description}
+                </p>
+              </>
+            ) : null}
+
+            {section.variant === "faq" ? (
+              <FaqAccordionSection className="mt-2" />
+            ) : null}
+
+            {section.variant === "testimonials" ? (
+              <AnimatedTestimonials
+                embedded
+                badgeText=""
+                testimonials={defaultSupplyChainTestimonials}
+                trustedCompanies={[
+                  "Maersk",
+                  "DHL",
+                  "FedEx",
+                  "DB Schenker",
+                  "CMA CGM",
+                ]}
+                className="mt-2"
+              />
+            ) : null}
 
             {index === 0 && (
               <div
                 className={cn(
-                  "flex flex-wrap items-center gap-4 text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground/70 mb-8",
+                  "mb-8 flex flex-wrap items-center gap-4 text-xs font-mono uppercase tracking-[0.2em] text-muted-foreground/70",
                   section.align === "center" && "justify-center",
                 )}
               >
@@ -279,7 +320,9 @@ export function ScrollGlobe({
               </div>
             )}
 
-            {section.features && (
+            {section.features &&
+              section.variant !== "faq" &&
+              section.variant !== "testimonials" && (
               <div className="grid gap-3 sm:gap-4 mb-10">
                 {section.features.map((feature) => (
                   <div

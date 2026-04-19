@@ -62,6 +62,25 @@ const sections = [
       { label: "Talk to sales", variant: "secondary" as const, href: "#" },
     ],
   },
+  {
+    id: "faq",
+    variant: "faq" as const,
+    badge: "FAQ",
+    title: "Answers for",
+    subtitle: "your ops team.",
+    description:
+      "Straight answers about security, integrations, rollout, and pricing — before you wire your first detection node.",
+    align: "left" as const,
+  },
+  {
+    id: "testimonials",
+    variant: "testimonials" as const,
+    badge: "Customers",
+    title: "Trusted in production",
+    subtitle: "",
+    description: "",
+    align: "center" as const,
+  },
 ]
 
 export default function HomePage() {
