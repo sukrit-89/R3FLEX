@@ -98,8 +98,7 @@ pnpm install
 pnpm dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
-
+4. Open [(https://supply-chain-logistics.vercel.app)]
 ## 📄 License
 
 This project is licensed under the MIT License.
