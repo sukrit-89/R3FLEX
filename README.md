@@ -83,18 +83,18 @@ graph TD
 ### Installation
 
 1. Clone the repository:
-   ```bash
+```bash
 git clone https://github.com/Subhadip-Paul2006/Supply_Chain_Logistics.git
 cd Supply_Chain_Logistics
 ```
 
 2. Install dependencies:
-   ```bash
+ ```bash
 pnpm install
 ```
 
 3. Run the development server:
-   ```bash
+```bash
 pnpm dev
 ```
 
