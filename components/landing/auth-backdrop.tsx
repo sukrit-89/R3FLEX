@@ -10,7 +10,7 @@ export function AuthBackdrop() {
         className="absolute inset-0 opacity-[0.25]"
         style={{
           backgroundImage:
-            "linear-gradient(to right, #31374A 1px, transparent 1px), linear-gradient(to bottom, #31374A 1px, transparent 1px)",
+            "linear-gradient(to right, var(--border) 1px, transparent 1px), linear-gradient(to bottom, var(--border) 1px, transparent 1px)",
           backgroundSize: "64px 64px",
           maskImage: "radial-gradient(ellipse at center, black 30%, transparent 75%)",
           WebkitMaskImage: "radial-gradient(ellipse at center, black 30%, transparent 75%)",

@@ -126,7 +126,7 @@ export default function LoginOne() {
         >
           <div
             className={cn(
-              'pointer-events-none absolute h-[500px] w-[500px] rounded-full bg-gradient-to-r from-[#2563eb]/25 via-[#3b82f6]/20 to-[#6366f1]/25 blur-3xl transition-opacity duration-200',
+              'pointer-events-none absolute h-[500px] w-[500px] rounded-full bg-gradient-to-r from-[var(--color-text-primary)]/25 via-[var(--color-bg-2)]/20 to-[var(--color-border)]/25 blur-3xl transition-opacity duration-200',
               isHovering ? 'opacity-100' : 'opacity-0',
             )}
             style={{

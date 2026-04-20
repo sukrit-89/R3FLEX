@@ -39,26 +39,24 @@ export function AnimatedSignUp() {
     window.setTimeout(() => setIsLoading(false), 1200)
   }
 
-  const fieldBase = (dark: boolean) =>
+  const fieldBase = () =>
     cn(
       'block w-full rounded-md border py-2.5 pr-4 pl-4 text-sm focus:ring-2 focus:outline-none',
-      dark
-        ? 'border-border bg-muted/50 text-foreground placeholder:text-muted-foreground focus:ring-primary'
-        : 'border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:ring-primary',
+      'border-border bg-muted/50 text-foreground placeholder:text-muted-foreground focus:ring-primary',
     )
 
   return (
     <div
       className={cn(
         'min-h-screen w-full transition-colors duration-300',
-        isDark ? 'bg-background' : 'bg-[#e8f4ef]',
+        'bg-background',
       )}
     >
       <div className="flex min-h-screen items-center justify-center p-4 py-12 md:p-8">
         <div
           className={cn(
             'relative w-full max-w-6xl overflow-hidden rounded-2xl border border-border shadow-xl transition-all duration-500',
-            isDark ? 'bg-card shadow-black/40' : 'bg-card shadow-gray-200/50',
+            'bg-card shadow-black/40',
             formVisible ? 'scale-100 opacity-100' : 'scale-[0.98] opacity-0',
           )}
         >
@@ -82,7 +80,7 @@ export function AnimatedSignUp() {
             <div
               className={cn(
                 'w-full p-8 md:w-2/5 md:p-10 lg:p-12',
-                isDark ? 'bg-card text-foreground' : 'bg-white text-gray-900',
+                'bg-card text-foreground',
               )}
               style={{
                 transform: formVisible ? 'translateX(0)' : 'translateX(16px)',
@@ -94,7 +92,7 @@ export function AnimatedSignUp() {
                 <p
                   className={cn(
                     'text-sm',
-                    isDark ? 'text-muted-foreground' : 'text-gray-600',
+                    'text-muted-foreground',
                   )}
                 >
                   Already have an account?{' '}
@@ -111,7 +109,7 @@ export function AnimatedSignUp() {
                 <h1
                   className={cn(
                     'mb-1 text-2xl font-bold',
-                    isDark ? 'text-foreground' : 'text-gray-900',
+                    'text-foreground',
                   )}
                 >
                   Create your <span className="text-primary">NexusGuard</span> account
@@ -119,7 +117,7 @@ export function AnimatedSignUp() {
                 <p
                   className={cn(
                     'text-sm',
-                    isDark ? 'text-muted-foreground' : 'text-gray-600',
+                    'text-muted-foreground',
                   )}
                 >
                   Join operations teams with live visibility across lanes and borders.
@@ -133,7 +131,7 @@ export function AnimatedSignUp() {
                       htmlFor="firstName"
                       className={cn(
                         'block text-sm font-medium',
-                        isDark ? 'text-foreground' : 'text-gray-700',
+                        'text-foreground',
                       )}
                     >
                       First name
@@ -143,7 +141,7 @@ export function AnimatedSignUp() {
                       name="firstName"
                       required
                       autoComplete="given-name"
-                      className={fieldBase(isDark)}
+                      className={fieldBase()}
                       placeholder="Ada"
                     />
                   </div>
@@ -152,7 +150,7 @@ export function AnimatedSignUp() {
                       htmlFor="lastName"
                       className={cn(
                         'block text-sm font-medium',
-                        isDark ? 'text-foreground' : 'text-gray-700',
+                        'text-foreground',
                       )}
                     >
                       Last name
@@ -162,7 +160,7 @@ export function AnimatedSignUp() {
                       name="lastName"
                       required
                       autoComplete="family-name"
-                      className={fieldBase(isDark)}
+                      className={fieldBase()}
                       placeholder="Lovelace"
                     />
                   </div>
@@ -173,7 +171,7 @@ export function AnimatedSignUp() {
                     htmlFor="phone"
                     className={cn(
                       'block text-sm font-medium',
-                      isDark ? 'text-foreground' : 'text-gray-700',
+                      'text-foreground',
                     )}
                   >
                     Phone number
@@ -184,7 +182,7 @@ export function AnimatedSignUp() {
                     type="tel"
                     required
                     autoComplete="tel"
-                    className={fieldBase(isDark)}
+                    className={fieldBase()}
                     placeholder="+91 …"
                   />
                 </div>
@@ -194,7 +192,7 @@ export function AnimatedSignUp() {
                     htmlFor="email"
                     className={cn(
                       'block text-sm font-medium',
-                      isDark ? 'text-foreground' : 'text-gray-700',
+                      'text-foreground',
                     )}
                   >
                     Email address
@@ -205,7 +203,7 @@ export function AnimatedSignUp() {
                     type="email"
                     required
                     autoComplete="email"
-                    className={fieldBase(isDark)}
+                    className={fieldBase()}
                     placeholder="you@company.com"
                   />
                 </div>
@@ -214,7 +212,7 @@ export function AnimatedSignUp() {
                   <span
                     className={cn(
                       'block text-sm font-medium',
-                      isDark ? 'text-foreground' : 'text-gray-700',
+                      'text-foreground',
                     )}
                   >
                     Country
@@ -222,9 +220,7 @@ export function AnimatedSignUp() {
                   <div
                     className={cn(
                       'rounded-md border py-2.5 pr-4 pl-4 text-sm',
-                      isDark
-                        ? 'border-border bg-muted/40 text-foreground'
-                        : 'border-gray-300 bg-gray-50 text-gray-800',
+                      'border-border bg-muted/40 text-foreground',
                     )}
                   >
                     India
@@ -237,7 +233,7 @@ export function AnimatedSignUp() {
                     htmlFor="state"
                     className={cn(
                       'block text-sm font-medium',
-                      isDark ? 'text-foreground' : 'text-gray-700',
+                      'text-foreground',
                     )}
                   >
                     State (India)
@@ -272,7 +268,7 @@ export function AnimatedSignUp() {
                     htmlFor="password"
                     className={cn(
                       'block text-sm font-medium',
-                      isDark ? 'text-foreground' : 'text-gray-700',
+                      'text-foreground',
                     )}
                   >
                     Password
@@ -285,7 +281,7 @@ export function AnimatedSignUp() {
                       required
                       minLength={10}
                       autoComplete="new-password"
-                      className={cn(fieldBase(isDark), 'pr-11')}
+                      className={cn(fieldBase(), 'pr-11')}
                       placeholder="At least 10 characters"
                     />
                     <button
@@ -308,7 +304,7 @@ export function AnimatedSignUp() {
                     htmlFor="confirmPassword"
                     className={cn(
                       'block text-sm font-medium',
-                      isDark ? 'text-foreground' : 'text-gray-700',
+                      'text-foreground',
                     )}
                   >
                     Confirm password
@@ -321,7 +317,7 @@ export function AnimatedSignUp() {
                       required
                       minLength={10}
                       autoComplete="new-password"
-                      className={cn(fieldBase(isDark), 'pr-11')}
+                      className={cn(fieldBase(), 'pr-11')}
                       placeholder="Repeat password"
                     />
                     <button
@@ -367,7 +363,7 @@ export function AnimatedSignUp() {
                 <p
                   className={cn(
                     'pt-2 text-center text-xs leading-relaxed',
-                    isDark ? 'text-muted-foreground' : 'text-gray-500',
+                    'text-muted-foreground',
                   )}
                 >
                   By signing up you agree to the{' '}

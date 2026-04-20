@@ -32,7 +32,7 @@ export default function PricingPage() {
         className="pointer-events-none absolute inset-0 opacity-[0.12]"
         style={{
           backgroundImage:
-            "linear-gradient(to right, #31374A 1px, transparent 1px), linear-gradient(to bottom, #31374A 1px, transparent 1px)",
+            "linear-gradient(to right, var(--border) 1px, transparent 1px), linear-gradient(to bottom, var(--border) 1px, transparent 1px)",
           backgroundSize: "64px 64px",
           maskImage: "linear-gradient(to bottom, black, transparent 70%)",
           WebkitMaskImage: "linear-gradient(to bottom, black, transparent 70%)",

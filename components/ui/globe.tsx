@@ -50,9 +50,9 @@ const ARCS: Arc[] = [
 ]
 
 const colorMap = {
-  teal: "#2563EB",
-  yellow: "#334155",
-  red: "#DC2626",
+  teal: "#E4572E",
+  yellow: "#2A2A35",
+  red: "#C1121F",
 }
 
 const Globe: React.FC = () => {
@@ -91,7 +91,7 @@ const Globe: React.FC = () => {
           className="relative w-[250px] h-[250px] rounded-full overflow-hidden"
           style={{
             boxShadow:
-              "0 0 40px rgba(37,99,235,0.28), -5px 0 8px #bfdbfe inset, 15px 2px 25px #000 inset, -24px -2px 34px rgba(191,219,254,0.45) inset, 250px 0 44px rgba(0,0,0,0.4) inset, 150px 0 38px rgba(0,0,0,0.66) inset",
+              "0 0 40px rgba(228,87,46,0.28), -5px 0 8px rgba(248,249,251,0.2) inset, 15px 2px 25px #000 inset, -24px -2px 34px rgba(248,249,251,0.2) inset, 250px 0 44px rgba(0,0,0,0.4) inset, 150px 0 38px rgba(0,0,0,0.66) inset",
             backgroundImage:
               "url('https://pub-940ccf6255b54fa799a9b01050e6c227.r2.dev/globe.jpeg')",
             backgroundSize: "cover",
@@ -132,8 +132,8 @@ const Globe: React.FC = () => {
         >
           <defs>
             <radialGradient id="nodeGlow" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#2563EB" stopOpacity="0.9" />
-              <stop offset="100%" stopColor="#2563EB" stopOpacity="0" />
+              <stop offset="0%" stopColor="#E4572E" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="#E4572E" stopOpacity="0" />
             </radialGradient>
           </defs>
 
@@ -155,7 +155,7 @@ const Globe: React.FC = () => {
                   rx={rx}
                   ry={rx * 0.15}
                   fill="none"
-                  stroke="#2563EB"
+                  stroke="#E4572E"
                   strokeOpacity="0.08"
                   strokeWidth="0.5"
                 />
@@ -193,7 +193,7 @@ const Globe: React.FC = () => {
                   cx={n.cx}
                   cy={n.cy}
                   r="2"
-                  fill="#2563EB"
+                  fill="#E4572E"
                   style={{
                     animation: `pulseNode 2.4s ease-in-out ${i * 0.3}s infinite`,
                     transformOrigin: `${n.cx}px ${n.cy}px`,
@@ -205,7 +205,7 @@ const Globe: React.FC = () => {
 
           {/* Alarm node (outside clip, always red) */}
           <g>
-            <circle cx="155" cy="120" r="3" fill="#DC2626">
+            <circle cx="155" cy="120" r="3" fill="#C1121F">
               <animate
                 attributeName="r"
                 values="3;6;3"

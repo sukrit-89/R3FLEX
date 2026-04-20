@@ -143,7 +143,7 @@ export function ScrollGlobe({
             transform: `scaleX(${scrollProgress})`,
             transformOrigin: "left center",
             transition: "transform 0.15s ease-out",
-            filter: "drop-shadow(0 0 4px rgba(37,99,235,0.55))",
+            filter: "drop-shadow(0 0 4px rgba(228,87,46,0.55))",
           }}
         />
       </div>
@@ -331,7 +331,7 @@ export function ScrollGlobe({
                   >
                     <div className="flex items-start gap-4">
                       <div className="mt-1.5 flex-shrink-0">
-                        <div className="w-2 h-2 rounded-full bg-primary group-hover:shadow-[0_0_12px_#2563EB] transition-all" />
+                        <div className="w-2 h-2 rounded-full bg-primary group-hover:shadow-[0_0_12px_var(--primary)] transition-all" />
                       </div>
                       <div className="flex-1 space-y-1.5 min-w-0">
                         <h3 className="font-semibold text-card-foreground text-base sm:text-lg">

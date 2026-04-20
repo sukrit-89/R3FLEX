@@ -34,8 +34,8 @@ export function AuthSplitCollage({
 
         <div
           className={cn(
-            'flex flex-col items-center justify-center rounded-xl p-6 text-white',
-            isDark ? 'bg-orange-700' : 'bg-orange-500',
+            'flex flex-col items-center justify-center rounded-xl p-6 text-primary-foreground',
+            'bg-primary',
           )}
           style={{
             transform: visible ? 'translateY(0)' : 'translateY(20px)',
@@ -70,8 +70,8 @@ export function AuthSplitCollage({
 
         <div
           className={cn(
-            'flex flex-col items-center justify-center rounded-xl p-6 text-white',
-            isDark ? 'bg-emerald-700' : 'bg-emerald-600',
+            'flex flex-col items-center justify-center rounded-xl p-6 text-secondary-foreground',
+            'bg-secondary',
           )}
           style={{
             transform: visible ? 'translateY(0)' : 'translateY(20px)',
