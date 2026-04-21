@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Check, X } from "lucide-react"
+import { Check, X } from "@/components/ui/phosphor-icons"
 import { TypedText } from "./typed-text"
 
 const before = [

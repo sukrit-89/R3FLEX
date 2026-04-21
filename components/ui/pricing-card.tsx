@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { Check, X } from 'lucide-react'
+import { Check, X } from '@/components/ui/phosphor-icons'
 
 import { GlowButton } from '@/components/ui/glow-button'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'

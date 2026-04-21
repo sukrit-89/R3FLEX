@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { FileCheck2, Pill, Thermometer, Timer } from "lucide-react"
+import { FileCheck2, Pill, Thermometer, Timer } from "@/components/ui/phosphor-icons"
 import { TypedText } from "./typed-text"
 
 const reasons = [

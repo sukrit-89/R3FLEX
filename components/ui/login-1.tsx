@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Facebook, Instagram, Linkedin } from 'lucide-react'
+import { Facebook, Instagram, Linkedin } from '@/components/ui/phosphor-icons'
 
 import { authInputClassName } from '@/lib/auth-field-classes'
 import { cn } from '@/lib/utils'

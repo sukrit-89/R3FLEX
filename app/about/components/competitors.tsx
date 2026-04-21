@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { ChevronRight } from "lucide-react"
+import { ChevronRight } from "@/components/ui/phosphor-icons"
 import { useState } from "react"
 import { TypedText } from "./typed-text"
 

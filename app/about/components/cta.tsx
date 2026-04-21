@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { ArrowRight, Radar } from "lucide-react"
+import { ArrowRight, Radar } from "@/components/ui/phosphor-icons"
 import Link from "next/link"
 import { GlowButton } from "@/components/ui/glow-button"
 import { TypedText } from "./typed-text"

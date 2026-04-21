@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { ChevronDown, Eye, EyeOff, Moon, Sun } from 'lucide-react'
+import { ChevronDown, Eye, EyeOff, Moon, Sun } from '@/components/ui/phosphor-icons'
 
 import { AuthSplitCollage, type AuthTheme } from '@/components/ui/auth-split-collage'
 import { GlowButton } from '@/components/ui/glow-button'

@@ -8,7 +8,7 @@ import {
   Flame,
   ShieldAlert,
   TrendingDown,
-} from "lucide-react"
+} from "@/components/ui/phosphor-icons"
 import { TypedText } from "./typed-text"
 
 type Stat = {

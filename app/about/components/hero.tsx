@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { ArrowDown, Radar } from "lucide-react"
+import { ArrowDown, Radar } from "@/components/ui/phosphor-icons"
 import { GlowButton } from "@/components/ui/glow-button"
 import { HeroTyped } from "./hero-typed"
 

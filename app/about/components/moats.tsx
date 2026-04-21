@@ -9,7 +9,7 @@ import {
   ShieldCheck,
   Syringe,
   Zap,
-} from "lucide-react"
+} from "@/components/ui/phosphor-icons"
 import { TypedText } from "./typed-text"
 
 const moats = [

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Radar } from 'lucide-react'
+import { Radar } from '@/components/ui/phosphor-icons'
 
 import { AnimatedSignIn } from '@/components/ui/sign-in'
 import { LiquidButton } from '@/components/ui/liquid-glass-button'

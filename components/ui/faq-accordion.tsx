@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { HelpCircle, MessageCircle, ChevronDown } from 'lucide-react'
+import { HelpCircle, MessageCircle, ChevronDown } from '@/components/ui/phosphor-icons'
 import * as AccordionPrimitive from '@radix-ui/react-accordion'
 
 import { cn } from '@/lib/utils'

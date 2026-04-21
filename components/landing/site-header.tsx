@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { Menu, X, Radar } from "lucide-react"
+import { Menu, X, Radar } from "@/components/ui/phosphor-icons"
 import { cn } from "@/lib/utils"
 import { LiquidButton } from "@/components/ui/liquid-glass-button"
 

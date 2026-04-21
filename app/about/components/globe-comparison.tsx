@@ -3,7 +3,7 @@
 import { useRef } from "react"
 import { motion, useScroll, useTransform } from "framer-motion"
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts"
-import { Bot, Radar, ShieldCheck, Zap } from "lucide-react"
+import { Bot, Radar, ShieldCheck, Zap } from "@/components/ui/phosphor-icons"
 import { TypedText } from "./typed-text"
 
 type Metric = {

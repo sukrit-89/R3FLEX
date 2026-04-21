@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Menu, Radar } from "lucide-react"
+import { Menu, Radar } from "@/components/ui/phosphor-icons"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { LiquidButton } from "@/components/ui/liquid-glass-button"

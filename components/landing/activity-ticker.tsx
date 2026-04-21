@@ -1,6 +1,6 @@
 "use client"
 
-import { Activity, AlertTriangle, Package, ShieldCheck, Zap } from "lucide-react"
+import { Activity, AlertTriangle, Package, ShieldCheck, Zap } from "@/components/ui/phosphor-icons"
 
 type Event = {
   icon: React.ComponentType<{ className?: string }>

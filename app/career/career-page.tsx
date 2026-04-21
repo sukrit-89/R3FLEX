@@ -17,7 +17,7 @@ import {
   ShieldCheck,
   Sparkles,
   Workflow,
-} from "lucide-react"
+} from "@/components/ui/phosphor-icons"
 import Link from "next/link"
 import { SiteHeader } from "@/components/landing/site-header"
 import { SiteFooter } from "@/components/landing/site-footer"

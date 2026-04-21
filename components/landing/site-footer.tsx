@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Radar, Github, Twitter, Linkedin } from "lucide-react"
+import { Radar, Github, Twitter, Linkedin } from "@/components/ui/phosphor-icons"
 import { LiquidButton } from "@/components/ui/liquid-glass-button"
 
 const nav = [

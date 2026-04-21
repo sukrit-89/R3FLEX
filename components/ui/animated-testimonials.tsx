@@ -2,7 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { Quote, Star } from 'lucide-react'
+import { Quote, Star } from '@/components/ui/phosphor-icons'
 import { motion, useAnimation, useInView } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
 

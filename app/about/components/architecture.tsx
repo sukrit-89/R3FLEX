@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Brain, Cog, GitBranch, Satellite } from "lucide-react"
+import { Brain, Cog, GitBranch, Satellite } from "@/components/ui/phosphor-icons"
 import { TypedText } from "./typed-text"
 
 const layers = [

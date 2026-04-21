@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Quote } from "lucide-react"
+import { Quote } from "@/components/ui/phosphor-icons"
 import { TypedText } from "./typed-text"
 
 export function Mission() {

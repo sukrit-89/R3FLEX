@@ -1,7 +1,7 @@
 "use client"
 
 import React, { forwardRef, useState } from "react"
-import { Sparkles } from "lucide-react"
+import { Sparkles } from "@/components/ui/phosphor-icons"
 import { cn } from "@/lib/utils"
 import { Slot } from "@radix-ui/react-slot"
 
