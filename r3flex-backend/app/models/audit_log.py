@@ -66,7 +66,7 @@ class AuditLog(Base):
         String(255), nullable=False, default="agent"
     )
     company_id: Mapped[str] = mapped_column(
-        String(255), nullable=False, default="pharma-distrib-india", index=True
+        String(255), nullable=False, default="default", index=True
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

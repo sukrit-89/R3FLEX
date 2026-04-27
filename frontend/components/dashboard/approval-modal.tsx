@@ -44,7 +44,7 @@ export function ApprovalModal({ decision, onClose, onActionCb, approverId }: { d
         </div>
 
         <div className="text-gray-300 mb-6 text-sm leading-relaxed">
-          The system detected a severe disruption block in the primary network. Confidence in the autonomous scenario execution is below the 85% threshold. Please review the options and manually execute.
+          The system detected a disruption that fell below the configured autonomy threshold. Review the generated options and decide whether to approve execution.
         </div>
         
         <div className="space-y-4 mb-8">

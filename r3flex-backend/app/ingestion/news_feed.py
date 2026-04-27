@@ -1,7 +1,7 @@
 """
-NewsAPI integration — fetches supply chain disruption signals from news.
-Falls back to mock data automatically if API key missing or call fails.
-API docs: https://newsapi.org/docs/endpoints/everything
+NewsAPI integration for live supply-chain disruption signals.
+
+Returns an empty list when the provider is not configured or unavailable.
 """
 import logging
 from datetime import datetime, timedelta, timezone
@@ -16,77 +16,49 @@ settings = get_settings()
 
 NEWS_API_BASE = "https://newsapi.org/v2/everything"
 
-# Keywords that indicate supply chain disruption events
 SUPPLY_CHAIN_KEYWORDS = (
     "supply chain disruption OR port closure OR shipping delay "
-    "OR suez canal OR factory fire OR logistics disruption "
+    "OR canal blockage OR factory fire OR logistics disruption "
     "OR trade route OR cargo disruption OR semiconductor shortage"
 )
 
-
-def _mock_news_data() -> list[dict]:
-    """
-    Mock news signals — returned when NewsAPI is unavailable.
-    Simulates realistic supply chain news for demo purposes.
-    """
-    return [
-        {
-            "source": "news_mock",
-            "title": "Geopolitical tensions escalating near Suez Canal — vessel diversions reported",
-            "text": (
-                "Multiple shipping companies have begun diverting vessels away from "
-                "the Suez Canal due to escalating geopolitical tensions in the Red Sea region. "
-                "An estimated 12 vessels have altered course to the Cape of Good Hope route, "
-                "adding 8-14 days to transit times. Pharmaceutical and perishable cargo "
-                "operators face significant disruption."
-            ),
-            "url": "https://mock-news.example.com/suez-disruption",
-            "published_at": datetime.now(timezone.utc).isoformat(),
-            "severity": 8.5,
-            "geography": "Suez Canal, Egypt",
-        },
-        {
-            "source": "news_mock",
-            "title": "Port of Rotterdam reports 48-hour congestion window",
-            "text": (
-                "Rotterdam port authority has issued a congestion warning following "
-                "an unexpected influx of diverted vessels. Berth waiting times have "
-                "increased to 48 hours. Pharmaceutical cold chain operators advised "
-                "to check temperature monitoring for affected consignments."
-            ),
-            "url": "https://mock-news.example.com/rotterdam-congestion",
-            "published_at": datetime.now(timezone.utc).isoformat(),
-            "severity": 5.0,
-            "geography": "Rotterdam, Netherlands",
-        },
-    ]
+BROADER_SUPPLY_CHAIN_KEYWORDS = (
+    "shipping OR port OR logistics OR cargo OR supply chain OR factory"
+)
 
 
 async def fetch_news_signals() -> list[dict]:
     """
-    Fetch supply chain news signals from NewsAPI.
-    Returns normalized signal dicts compatible with agent pipeline.
-    Falls back to mock data if API key missing or request fails.
-
-    Returns:
-        List of normalized signal dicts with keys:
-            source, title, text, url, published_at, severity, geography
+    Fetch supply-chain news signals from NewsAPI.
     """
     if not settings.news_api_key:
-        logger.info("NEWS_API_KEY not set — using mock news data.")
-        return _mock_news_data()
+        logger.info("NEWS_API_KEY not set; skipping news feed.")
+        return []
 
-    # Only fetch news from last hour to avoid reprocessing
-    from_date = (datetime.now(timezone.utc) - timedelta(hours=1)).strftime(
+    from_date = (datetime.now(timezone.utc) - timedelta(days=7)).strftime(
         "%Y-%m-%dT%H:%M:%SZ"
     )
 
+    articles = await _fetch_articles(SUPPLY_CHAIN_KEYWORDS, from_date, page_size=20)
+    if not articles:
+        logger.info("NewsAPI exact disruption query returned 0 articles; trying broader logistics query.")
+        articles = await _fetch_articles(BROADER_SUPPLY_CHAIN_KEYWORDS, from_date, page_size=10)
+
+    logger.info("NewsAPI usable articles: %d.", len(articles))
+    return [
+        _normalize_article(article)
+        for article in articles
+        if article.get("title") or article.get("description") or article.get("content")
+    ]
+
+
+async def _fetch_articles(query: str, from_date: str, page_size: int) -> list[dict]:
     params = {
-        "q": SUPPLY_CHAIN_KEYWORDS,
+        "q": query,
         "from": from_date,
         "sortBy": "publishedAt",
         "language": "en",
-        "pageSize": 10,
+        "pageSize": page_size,
         "apiKey": settings.news_api_key,
     }
 
@@ -95,41 +67,31 @@ async def fetch_news_signals() -> list[dict]:
             response = await client.get(NEWS_API_BASE, params=params)
             response.raise_for_status()
             data = response.json()
-
-        articles = data.get("articles", [])
-        logger.info("NewsAPI returned %d articles.", len(articles))
-
-        return [_normalize_article(a) for a in articles if a.get("content")]
-
     except httpx.HTTPStatusError as exc:
         logger.warning(
-            "NewsAPI HTTP error %d: %s. Falling back to mock data.",
-            exc.response.status_code, exc
+            "NewsAPI HTTP error %d for query '%s': %s.",
+            exc.response.status_code,
+            query,
+            exc,
         )
-        return _mock_news_data()
+        return []
     except Exception as exc:
-        logger.warning("NewsAPI error: %s. Falling back to mock data.", exc)
-        return _mock_news_data()
+        logger.warning("NewsAPI error for query '%s': %s.", query, exc)
+        return []
+
+    articles = data.get("articles", [])
+    logger.info("NewsAPI query '%s' returned %d articles.", query, len(articles))
+    return articles
 
 
 def _normalize_article(article: dict) -> dict:
-    """
-    Convert NewsAPI article format to normalized signal dict.
-    Severity is estimated from keyword presence — real scoring done by SeverityAgent.
-
-    Args:
-        article: Raw NewsAPI article dict
-
-    Returns:
-        Normalized signal dict
-    """
     text = f"{article.get('title', '')} {article.get('description', '')} {article.get('content', '')}"
     severity = _estimate_severity(text)
 
     return {
         "source": "news",
         "title": article.get("title", ""),
-        "text": text[:2000],  # Truncate to avoid LLM token overflow
+        "text": text[:2000],
         "url": article.get("url", ""),
         "published_at": article.get("publishedAt", ""),
         "severity": severity,
@@ -138,13 +100,8 @@ def _normalize_article(article: dict) -> dict:
 
 
 def _estimate_severity(text: str) -> float:
-    """
-    Rough severity estimate from keyword presence.
-    SeverityAgent will do the real scoring — this is just for feed prioritization.
-    Scale: 1.0 (minor) to 10.0 (catastrophic).
-    """
     text_lower = text.lower()
-    score = 3.0  # Baseline for news appearing at all
+    score = 3.0
 
     high_impact = ["closure", "shutdown", "blockage", "military", "war", "explosion", "fire"]
     medium_impact = ["delay", "congestion", "disruption", "diversion", "shortage"]
@@ -161,11 +118,6 @@ def _estimate_severity(text: str) -> float:
 
 
 def _extract_geography(text: str) -> Optional[str]:
-    """
-    Simple geography extraction from text.
-    Returns first recognized location or None.
-    GraphMapperAgent does the real geo-to-node mapping.
-    """
     locations = [
         "Suez Canal", "Red Sea", "Rotterdam", "Shanghai", "Singapore",
         "Chennai", "Frankfurt", "Hamburg", "Port Said", "Cape of Good Hope",

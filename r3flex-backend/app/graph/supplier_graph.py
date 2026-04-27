@@ -217,7 +217,7 @@ def get_supplier_graph() -> SupplierGraph:
 
 def set_supplier_graph(graph: SupplierGraph) -> None:
     """
-    Set the global singleton. Used by seed_data.py and tests.
+    Set the global singleton. Used by runtime loader and tests.
     """
     global _graph_instance
     _graph_instance = graph

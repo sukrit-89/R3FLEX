@@ -6,7 +6,7 @@ import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 
 from app.main import app
-from app.graph.seed_data import seed_supplier_graph
+from tests.fixtures_network import seed_supplier_graph
 
 
 @pytest.fixture(scope="session", autouse=True)

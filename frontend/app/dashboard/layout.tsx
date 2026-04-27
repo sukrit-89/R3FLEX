@@ -4,7 +4,6 @@ import { ShieldCheck, MapTrifold, Graph, Bell, Gear, User } from "@phosphor-icon
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen bg-[#0A0A0A] text-white">
-      {/* Sidebar */}
       <aside className="w-64 border-r border-white/10 flex flex-col">
         <div className="h-16 flex items-center px-6 border-b border-white/10">
           <Link href="/" className="flex items-center gap-2">
@@ -35,17 +34,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <User size={16} />
             </div>
             <div>
-              <div className="text-sm font-medium">Ops Commander</div>
-              <div className="text-xs text-gray-500">PharmaDistrib</div>
+              <div className="text-sm font-medium">Operations User</div>
+              <div className="text-xs text-gray-500">Authenticated session</div>
             </div>
           </div>
         </div>
       </aside>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         <header className="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-[#0A0A0A]/50 backdrop-blur-sm z-10">
-          <div className="text-sm text-gray-400">PharmaDistrib → Logistics Execution</div>
+          <div className="text-sm text-gray-400">Live Logistics Execution</div>
           <div className="flex items-center gap-4">
             <button className="text-gray-400 hover:text-white transition-colors">
               <Gear size={20} />
@@ -53,9 +51,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto relative">
-          {children}
-        </main>
+        <main className="flex-1 overflow-auto relative">{children}</main>
       </div>
     </div>
   )

@@ -223,7 +223,7 @@ _pipeline = _build_pipeline()
 async def run_pipeline(
     raw_signal: str,
     source: str = "unknown",
-    company_id: str = "pharma-distrib-india",
+    company_id: str = "default",
 ) -> AgentState:
     """
     Run the full 4-agent pipeline on a raw signal.

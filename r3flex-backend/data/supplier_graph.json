@@ -1,0 +1,194 @@
+{
+  "nodes": [
+    {
+      "id": "india-raw-supplier",
+      "name": "Gujarat Raw Supplier",
+      "location": "Gujarat, India",
+      "tier": 0,
+      "type": "raw_supplier",
+      "active": true,
+      "latitude": 22.2587,
+      "longitude": 71.1924
+    },
+    {
+      "id": "europe-excipient-supplier",
+      "name": "Hamburg Excipient Supplier",
+      "location": "Hamburg, Germany",
+      "tier": 0,
+      "type": "raw_supplier",
+      "active": true,
+      "latitude": 53.5511,
+      "longitude": 9.9937
+    },
+    {
+      "id": "chennai-manufacturer",
+      "name": "Chennai Manufacturer",
+      "location": "Chennai, India",
+      "tier": 1,
+      "type": "manufacturer",
+      "active": true,
+      "alternative": "berlin-pharma",
+      "latitude": 13.0827,
+      "longitude": 80.2707
+    },
+    {
+      "id": "suez-hub",
+      "name": "Suez Hub",
+      "location": "Suez Canal, Egypt",
+      "tier": 2,
+      "type": "logistics_hub",
+      "active": true,
+      "alternative": "cape-route-hub",
+      "latitude": 30.0444,
+      "longitude": 32.5577
+    },
+    {
+      "id": "cape-route-hub",
+      "name": "Cape Route Hub",
+      "location": "Cape Town, South Africa",
+      "tier": 2,
+      "type": "logistics_hub",
+      "active": true,
+      "latitude": -33.9249,
+      "longitude": 18.4241
+    },
+    {
+      "id": "rotterdam-dist",
+      "name": "Rotterdam DC",
+      "location": "Rotterdam, Netherlands",
+      "tier": 2,
+      "type": "distribution_center",
+      "active": true,
+      "latitude": 51.9244,
+      "longitude": 4.4777
+    },
+    {
+      "id": "frankfurt-warehouse",
+      "name": "Frankfurt Warehouse",
+      "location": "Frankfurt, Germany",
+      "tier": 3,
+      "type": "warehouse",
+      "active": true,
+      "latitude": 50.1109,
+      "longitude": 8.6821
+    },
+    {
+      "id": "berlin-pharma",
+      "name": "Berlin Backup Supplier",
+      "location": "Berlin, Germany",
+      "tier": 2,
+      "type": "backup_supplier",
+      "active": true,
+      "latitude": 52.52,
+      "longitude": 13.405
+    }
+  ],
+  "edges": [
+    {
+      "source": "india-raw-supplier",
+      "target": "chennai-manufacturer",
+      "transit_days": 3,
+      "cost_factor": 1.0,
+      "risk_level": 0.2,
+      "mode": "road"
+    },
+    {
+      "source": "europe-excipient-supplier",
+      "target": "chennai-manufacturer",
+      "transit_days": 18,
+      "cost_factor": 1.4,
+      "risk_level": 0.25,
+      "mode": "sea"
+    },
+    {
+      "source": "chennai-manufacturer",
+      "target": "suez-hub",
+      "transit_days": 7,
+      "cost_factor": 1.0,
+      "risk_level": 0.7,
+      "mode": "sea"
+    },
+    {
+      "source": "chennai-manufacturer",
+      "target": "cape-route-hub",
+      "transit_days": 18,
+      "cost_factor": 1.8,
+      "risk_level": 0.3,
+      "mode": "sea"
+    },
+    {
+      "source": "chennai-manufacturer",
+      "target": "frankfurt-warehouse",
+      "transit_days": 3,
+      "cost_factor": 2.4,
+      "risk_level": 0.35,
+      "mode": "air"
+    },
+    {
+      "source": "suez-hub",
+      "target": "rotterdam-dist",
+      "transit_days": 4,
+      "cost_factor": 1.0,
+      "risk_level": 0.2,
+      "mode": "sea"
+    },
+    {
+      "source": "cape-route-hub",
+      "target": "rotterdam-dist",
+      "transit_days": 8,
+      "cost_factor": 1.7,
+      "risk_level": 0.15,
+      "mode": "sea"
+    },
+    {
+      "source": "rotterdam-dist",
+      "target": "frankfurt-warehouse",
+      "transit_days": 1,
+      "cost_factor": 1.0,
+      "risk_level": 0.05,
+      "mode": "road"
+    },
+    {
+      "source": "rotterdam-dist",
+      "target": "berlin-pharma",
+      "transit_days": 1,
+      "cost_factor": 1.1,
+      "risk_level": 0.05,
+      "mode": "rail"
+    },
+    {
+      "source": "berlin-pharma",
+      "target": "frankfurt-warehouse",
+      "transit_days": 1,
+      "cost_factor": 1.2,
+      "risk_level": 0.05,
+      "mode": "road"
+    }
+  ],
+  "shipments": [
+    {
+      "id": "ship-001",
+      "origin": "india-raw-supplier",
+      "destination": "frankfurt-warehouse",
+      "material": "API",
+      "mode": "sea",
+      "route": ["india-raw-supplier", "chennai-manufacturer", "suez-hub", "rotterdam-dist", "frankfurt-warehouse"]
+    },
+    {
+      "id": "ship-002",
+      "origin": "europe-excipient-supplier",
+      "destination": "chennai-manufacturer",
+      "material": "Excipient",
+      "mode": "sea",
+      "route": ["europe-excipient-supplier", "chennai-manufacturer"]
+    },
+    {
+      "id": "ship-003",
+      "origin": "chennai-manufacturer",
+      "destination": "frankfurt-warehouse",
+      "material": "Cold Chain SKU",
+      "mode": "air",
+      "route": ["chennai-manufacturer", "frankfurt-warehouse"]
+    }
+  ]
+}

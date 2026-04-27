@@ -82,6 +82,11 @@ class Disruption(Base):
         cascade="all, delete-orphan",
         lazy="selectin",
     )
+    tasks: Mapped[list["Task"]] = relationship(  # noqa: F821
+        "Task",
+        back_populates="disruption",
+        lazy="selectin",
+    )
 
     def __repr__(self) -> str:
         return (

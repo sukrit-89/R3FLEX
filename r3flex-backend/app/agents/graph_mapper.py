@@ -9,6 +9,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from app.config import get_settings
+from app.graph.network_store import get_all_shipments
 from app.graph.supplier_graph import get_supplier_graph
 
 logger = logging.getLogger(__name__)
@@ -137,11 +138,9 @@ class GraphMapperAgent:
 
     def _get_affected_shipments(self, node_id: str) -> list[str]:
         """Return IDs of active shipments that pass through the disrupted node."""
-        from app.graph.seed_data import get_all_shipments
-        all_shipments = get_all_shipments()
         return [
             s["id"]
-            for s in all_shipments
+            for s in get_all_shipments()
             if node_id in s.get("route", [])
         ]
 

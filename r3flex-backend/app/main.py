@@ -14,7 +14,7 @@ from app.config import get_settings
 from app.redis_client import init_redis, close_redis
 
 # Import all routers
-from app.routers import disruptions, scenarios, decisions, audit, ws
+from app.routers import disruptions, scenarios, decisions, audit, ws, topology, suppliers, tasks
 
 settings = get_settings()
 
@@ -50,13 +50,13 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.warning("Scheduler failed to start: %s. Continuing without polling.", exc)
 
-    # 3. Load supplier graph seed data
+    # 3. Load runtime supply-network data
     try:
-        from app.graph.seed_data import seed_supplier_graph
-        seed_supplier_graph()
-        logger.info("Supplier graph seeded with PharmaDistrib demo network.")
+        from app.graph.network_store import load_runtime_network
+        load_runtime_network()
+        logger.info("Runtime supply network initialized.")
     except Exception as exc:
-        logger.warning("Graph seeding failed: %s", exc)
+        logger.warning("Runtime network initialization failed: %s", exc)
 
     yield  # ← App runs here
 
@@ -144,4 +144,7 @@ app.include_router(disruptions.router, prefix="/disruptions", tags=["disruptions
 app.include_router(scenarios.router, prefix="", tags=["scenarios"])
 app.include_router(decisions.router, prefix="/decisions", tags=["decisions"])
 app.include_router(audit.router, prefix="/audit", tags=["audit"])
+app.include_router(topology.router, prefix="/topology", tags=["topology"])
+app.include_router(suppliers.router, prefix="/suppliers", tags=["suppliers"])
+app.include_router(tasks.router, prefix="/tasks", tags=["tasks"])
 app.include_router(ws.router, tags=["websocket"])

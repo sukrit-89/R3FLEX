@@ -51,7 +51,7 @@ uvicorn app.main:app --reload   # Start dev server
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/disruptions/demo` | Trigger hardcoded Suez Canal demo (confidence 91%, auto-executes) |
+| `POST` | `/disruptions/ingest` | Poll configured live providers once and process the top signal |
 | `POST` | `/disruptions/trigger` | Trigger custom analysis pipeline |
 | `GET`  | `/disruptions` | List all disruptions (paginated) |
 | `GET`  | `/disruptions/{id}` | Single disruption with scenarios |
@@ -62,7 +62,7 @@ uvicorn app.main:app --reload   # Start dev server
 ## Demo Scenario
 
 ```bash
-curl -X POST http://localhost:8000/disruptions/demo
+curl -X POST http://localhost:8000/disruptions/ingest
 ```
 
 **Expected response:**
@@ -73,7 +73,7 @@ curl -X POST http://localhost:8000/disruptions/demo
 
 ## WebSocket
 
-Connect to `ws://localhost:8000/ws/disruptions/pharma-distrib-india` for real-time events.
+Connect to `ws://localhost:8000/ws/disruptions/default` for real-time events.
 Below-threshold decisions publish here for human approval modal.
 
 ## Environment Variables

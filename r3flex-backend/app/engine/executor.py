@@ -1,7 +1,5 @@
 """
-Executor — executes autonomous decisions or escalates to human via Redis pub/sub.
-CRITICAL: AuditService.log() MUST be called BEFORE Executor.execute().
-This ordering is a core business rule — never change it.
+Executor executes autonomous decisions or escalates them to human review.
 """
 import logging
 import uuid
@@ -10,30 +8,28 @@ from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agents.orchestrator import AgentState
 from app.config import get_settings
 from app.engine.confidence import ConfidenceResult
 from app.engine.tradeoff import ScoredScenario
-from app.agents.orchestrator import AgentState
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
 
 class ExecutionResult:
-    """Result from Executor.execute()."""
-
     def __init__(
         self,
         auto_executed: bool,
         status: str,
         message: str,
-        mock_erp_log: Optional[str] = None,
+        erp_log: Optional[str] = None,
         supplier_email_draft: Optional[str] = None,
     ) -> None:
         self.auto_executed = auto_executed
-        self.status = status          # "executed" | "pending_approval"
+        self.status = status
         self.message = message
-        self.mock_erp_log = mock_erp_log
+        self.erp_log = erp_log
         self.supplier_email_draft = supplier_email_draft
 
     def to_dict(self) -> dict:
@@ -41,28 +37,12 @@ class ExecutionResult:
             "auto_executed": self.auto_executed,
             "status": self.status,
             "message": self.message,
-            "mock_erp_log": self.mock_erp_log,
+            "erp_log": self.erp_log,
             "supplier_email_draft": self.supplier_email_draft,
         }
 
 
 class Executor:
-    """
-    Executes or escalates a decision based on confidence score.
-
-    Execution paths:
-        confidence >= threshold → auto_execute()
-            1. Write audit log  ← ALWAYS FIRST
-            2. Generate mock ERP update
-            3. Draft supplier notification email
-            4. Mark decision as executed
-
-        confidence < threshold → escalate_to_human()
-            1. Write audit log  ← ALWAYS FIRST
-            2. Publish pending decision to Redis pub/sub
-            3. Frontend WebSocket receives it → shows approval modal
-    """
-
     async def execute(
         self,
         disruption_id: uuid.UUID,
@@ -71,26 +51,8 @@ class Executor:
         recommended_scenario: ScoredScenario,
         agent_state: AgentState,
         db: AsyncSession,
-        company_id: str = "pharma-distrib-india",
+        company_id: str = "default",
     ) -> ExecutionResult:
-        """
-        Route decision to auto-execute or human escalation based on confidence.
-
-        IMPORTANT: Audit log is written inside this method BEFORE any action.
-        Callers must NOT write audit logs separately.
-
-        Args:
-            disruption_id       : UUID of the Disruption record
-            decision_id         : UUID of the Decision record
-            confidence_result   : From ConfidenceEvaluator
-            recommended_scenario: Top-ranked scenario from TradeoffScorer
-            agent_state         : Full pipeline state (for audit reasoning)
-            db                  : Async SQLAlchemy session
-            company_id          : Company identifier for Redis channel
-
-        Returns:
-            ExecutionResult with status and execution details
-        """
         if confidence_result.above_threshold:
             return await self._auto_execute(
                 disruption_id=disruption_id,
@@ -100,16 +62,16 @@ class Executor:
                 agent_state=agent_state,
                 db=db,
             )
-        else:
-            return await self._escalate_to_human(
-                disruption_id=disruption_id,
-                decision_id=decision_id,
-                confidence_result=confidence_result,
-                recommended_scenario=recommended_scenario,
-                agent_state=agent_state,
-                db=db,
-                company_id=company_id,
-            )
+
+        return await self._escalate_to_human(
+            disruption_id=disruption_id,
+            decision_id=decision_id,
+            confidence_result=confidence_result,
+            recommended_scenario=recommended_scenario,
+            agent_state=agent_state,
+            db=db,
+            company_id=company_id,
+        )
 
     async def _auto_execute(
         self,
@@ -120,13 +82,6 @@ class Executor:
         agent_state: AgentState,
         db: AsyncSession,
     ) -> ExecutionResult:
-        """
-        Auto-execute path: confidence >= threshold.
-        Step 1 (MANDATORY): Write audit log.
-        Step 2: Generate mock ERP log entry.
-        Step 3: Draft supplier email.
-        Step 4: Update Decision status.
-        """
         logger.info(
             "AUTO-EXECUTE: disruption=%s decision=%s confidence=%.2f",
             disruption_id, decision_id, confidence_result.confidence
@@ -134,8 +89,8 @@ class Executor:
 
         option = recommended_scenario.option
 
-        # ── Step 1: Write audit log FIRST ─────────────────────────────────────
         from app.services.audit_svc import AuditService
+
         await AuditService.log(
             action_type="auto_execute",
             disruption_id=disruption_id,
@@ -150,26 +105,20 @@ class Executor:
             signals_used={
                 "news": agent_state.get("source") == "news",
                 "weather": agent_state.get("source") == "weather",
-                "port": agent_state.get("source") in ("port_mock", "port"),
+                "port": agent_state.get("source") == "port",
             },
             confidence_score=confidence_result.confidence,
             actor="agent",
             db=db,
         )
-        logger.info("Audit log written for auto-execution.")
 
-        # ── Step 2: Mock ERP log entry ─────────────────────────────────────────
         erp_log = self._generate_erp_log(option, agent_state, disruption_id)
-
-        # ── Step 3: Supplier notification email draft ──────────────────────────
         email_draft = self._draft_supplier_email(option, agent_state)
 
-        # ── Step 4: Update Decision record ────────────────────────────────────
         from app.models.decision import Decision
         from sqlalchemy import select
-        result = await db.execute(
-            select(Decision).where(Decision.id == decision_id)
-        )
+
+        result = await db.execute(select(Decision).where(Decision.id == decision_id))
         decision = result.scalar_one_or_none()
         if decision:
             decision.status = "executed"
@@ -178,11 +127,6 @@ class Executor:
             decision.outcome = f"Auto-executed: {option.label}"
             await db.flush()
 
-        logger.info(
-            "Auto-execution complete: '%s' | $%.0f | +%.0fd",
-            option.label, option.cost_delta_usd, option.time_delta_days
-        )
-
         return ExecutionResult(
             auto_executed=True,
             status="executed",
@@ -190,9 +134,9 @@ class Executor:
                 f"Autonomously executed: {option.label}. "
                 f"Confidence was {confidence_result.confidence:.0%} "
                 f"(threshold {confidence_result.threshold_used:.0%}). "
-                f"Full reasoning saved to audit log."
+                "Full reasoning saved to audit log."
             ),
-            mock_erp_log=erp_log,
+            erp_log=erp_log,
             supplier_email_draft=email_draft,
         )
 
@@ -206,18 +150,13 @@ class Executor:
         db: AsyncSession,
         company_id: str,
     ) -> ExecutionResult:
-        """
-        Human escalation path: confidence < threshold.
-        Step 1 (MANDATORY): Write audit log.
-        Step 2: Publish to Redis for WebSocket delivery to frontend.
-        """
         logger.info(
-            "ESCALATING TO HUMAN: disruption=%s confidence=%.2f (threshold=%.2f)",
+            "ESCALATING TO HUMAN: disruption=%s confidence=%.2f threshold=%.2f",
             disruption_id, confidence_result.confidence, confidence_result.threshold_used
         )
 
-        # ── Step 1: Write audit log FIRST ─────────────────────────────────────
         from app.services.audit_svc import AuditService
+
         await AuditService.log(
             action_type="escalate_human",
             disruption_id=disruption_id,
@@ -226,15 +165,13 @@ class Executor:
             signals_used={
                 "news": agent_state.get("source") == "news",
                 "weather": agent_state.get("source") == "weather",
-                "port": agent_state.get("source") in ("port_mock", "port"),
+                "port": agent_state.get("source") == "port",
             },
             confidence_score=confidence_result.confidence,
             actor="agent",
             db=db,
         )
-        logger.info("Audit log written for escalation.")
 
-        # ── Step 2: Publish to Redis → WebSocket ──────────────────────────────
         channel = f"disruptions:{company_id}"
         payload = {
             "event": "approval_required",
@@ -258,6 +195,7 @@ class Executor:
 
         try:
             from app.redis_client import publish
+
             await publish(channel, payload)
             logger.info("Published approval_required to Redis channel '%s'.", channel)
         except Exception as exc:
@@ -279,7 +217,6 @@ class Executor:
         agent_state: AgentState,
         disruption_id: uuid.UUID,
     ) -> str:
-        """Generate mock ERP system log entry string."""
         timestamp = datetime.now(timezone.utc).isoformat()
         return (
             f"[ERP UPDATE | {timestamp}]\n"
@@ -291,38 +228,33 @@ class Executor:
             f"Cost delta: +${option.cost_delta_usd:,.0f}\n"
             f"ETA delta: +{option.time_delta_days:.0f} days\n"
             f"Status: EXECUTED_BY_AGENT\n"
-            f"Next ERP sync: PENDING_CONFIRMATION"
+            "Next ERP sync: PENDING_CONFIRMATION"
         )
 
     def _draft_supplier_email(self, option, agent_state: AgentState) -> str:
-        """Draft supplier notification email text."""
-        is_berlin = "berlin" in option.label.lower() or "backup" in option.label.lower()
+        is_backup = "backup" in option.label.lower()
 
-        if is_berlin:
-            recipient = "operations@berlin-pharma.de"
-            subject = "URGENT: Backup Supply Activation Request — PharmaDistrib India"
+        if is_backup:
+            recipient = "operations@backup-supplier.example"
+            subject = "URGENT: Backup Supply Activation Request"
             body = (
-                f"Dear Berlin Pharma GmbH Operations Team,\n\n"
+                "Dear Operations Team,\n\n"
                 f"Due to a critical supply chain disruption ({agent_state.get('event_type')} at "
                 f"{agent_state.get('geography')}, severity {agent_state.get('severity_score')}/10), "
-                f"we are activating your facility as our primary EU backup supplier "
-                f"effective immediately.\n\n"
-                f"Required action: Begin fulfilment of Frankfurt warehouse replenishment "
-                f"orders within 72 hours. Our procurement team will share the exact "
-                f"purchase orders within 2 hours.\n\n"
-                f"This is an automated notification from the R3flex AI system. "
-                f"A human account manager will follow up within 1 hour.\n\n"
+                "we are activating your facility as a backup supply option effective immediately.\n\n"
+                "Please confirm fulfillment readiness and earliest possible ship date.\n\n"
+                "This is an automated notification from the R3flex AI system.\n\n"
                 f"Reference: Disruption ID {agent_state.get('source', 'auto')}-"
                 f"{datetime.now(timezone.utc).strftime('%Y%m%d%H%M')}\n\n"
-                f"Best regards,\nR3flex Automated Operations\nPharmaDistrib India Pvt Ltd"
+                "Best regards,\nR3flex Automated Operations"
             )
         else:
             recipient = "logistics@carrier.example.com"
-            subject = f"URGENT: Rerouting Request — {option.label}"
+            subject = f"URGENT: Rerouting Request - {option.label}"
             body = (
                 f"Due to supply chain disruption at {agent_state.get('geography')}, "
                 f"we are implementing: {option.label}.\n\n"
-                f"Please acknowledge receipt and confirm implementation timeline. "
+                "Please acknowledge receipt and confirm implementation timeline. "
                 f"Affected shipments: {', '.join(agent_state.get('affected_shipment_ids', []))}."
             )
 

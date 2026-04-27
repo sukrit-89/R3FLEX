@@ -14,6 +14,7 @@ PRD rule: WebSocket channel name must be "disruptions:{company_id}"
 import asyncio
 import json
 import logging
+from contextlib import suppress
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
@@ -35,10 +36,10 @@ async def disruption_websocket(
     """
     WebSocket endpoint for real-time disruption events.
 
-    Connect with: ws://localhost:8000/ws/disruptions/pharma-distrib-india
+    Connect with: ws://localhost:8000/ws/disruptions/default
 
     Messages sent to client:
-        {"type": "connected", "channel": "disruptions:pharma-distrib-india"}
+        {"type": "connected", "channel": "disruptions:default"}
         {"type": "heartbeat", "timestamp": "..."}
         {"type": "disruption_event", "event": "approval_required", ...}
 
@@ -58,6 +59,7 @@ async def disruption_websocket(
         "channel": channel,
         "message": f"Subscribed to {channel}. Listening for disruption events.",
     })
+    heartbeat_task = asyncio.create_task(_heartbeat_loop(websocket))
 
     # ── Subscribe to Redis pub/sub ────────────────────────────────────────────
     try:
@@ -69,16 +71,22 @@ async def disruption_websocket(
     except Exception as exc:
         logger.error("Redis pubsub init failed: %s", exc)
         await websocket.send_json({
-            "type": "error",
-            "message": "Real-time stream unavailable. Redis connection failed.",
+            "type": "stream_degraded",
+            "message": "Connected without Redis pub/sub. Live updates are degraded, but the socket will stay open.",
         })
-        await websocket.close()
+        try:
+            while True:
+                await websocket.receive_text()
+        except WebSocketDisconnect:
+            logger.info("WebSocket disconnected: channel=%s", channel)
+        finally:
+            heartbeat_task.cancel()
+            with suppress(Exception, asyncio.CancelledError):
+                await heartbeat_task
         return
 
     # ── Main event loop ───────────────────────────────────────────────────────
     try:
-        heartbeat_task = asyncio.create_task(_heartbeat_loop(websocket))
-
         async for message in pubsub.listen():
             if message["type"] == "message":
                 try:
@@ -105,6 +113,8 @@ async def disruption_websocket(
         logger.error("WebSocket error: %s", exc, exc_info=True)
     finally:
         heartbeat_task.cancel()
+        with suppress(Exception, asyncio.CancelledError):
+            await heartbeat_task
         try:
             await pubsub.unsubscribe(channel)
             await pubsub.aclose()

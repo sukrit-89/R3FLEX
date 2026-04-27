@@ -26,7 +26,7 @@ class AuditService:
         reasoning: Optional[str] = None,
         signals_used: Optional[dict[str, Any]] = None,
         confidence_score: Optional[float] = None,
-        company_id: str = "pharma-distrib-india",
+        company_id: str = "default",
     ) -> AuditLog:
         """
         Write an immutable audit log entry.

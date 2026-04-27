@@ -4,7 +4,7 @@ Verifies cascade traversal meets PRD rule: minimum 2 hops.
 """
 import pytest
 from app.graph.supplier_graph import SupplierGraph
-from app.graph.seed_data import seed_supplier_graph, get_suez_shipments, get_all_shipments
+from tests.fixtures_network import seed_supplier_graph, get_suez_shipments, get_all_shipments
 
 
 class TestSupplierGraph:

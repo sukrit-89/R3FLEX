@@ -35,13 +35,17 @@ class Settings(BaseSettings):
     # ── External signal feeds (optional — mock fallback if missing) ───────────
     news_api_key: str = ""
     noaa_api_key: str = ""
+    port_signals_url: str = ""
+    demo_signal_fallback_enabled: bool = True
+    supplier_graph_path: str = ""
+    shipments_data_path: str = ""
 
     # ── Business rules ────────────────────────────────────────────────────────
     # Confidence above this → auto-execute. Below → human approval.
     confidence_threshold: float = 0.85
 
     # Demo company ID — also used as WebSocket channel suffix
-    company_id: str = "pharma-distrib-india"
+    company_id: str = "default"
 
     # APScheduler: how often to poll feeds (seconds)
     poll_interval_seconds: int = 60

@@ -74,7 +74,7 @@ async def publish(channel: str, payload: dict[str, Any]) -> None:
     Used by executor to push below-threshold decisions to WebSocket clients.
 
     Args:
-        channel: Redis channel name, e.g. "disruptions:pharma-distrib-india"
+        channel: Redis channel name, e.g. "disruptions:default"
         payload: Dict — will be JSON-serialized before publish
     """
     client = get_redis_client()

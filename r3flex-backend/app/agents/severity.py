@@ -1,7 +1,5 @@
 """
-Severity Agent — scores disruption impact on scale 1.0–10.0.
-Considers: trade volume at risk, supplier proximity, historical frequency,
-cascade potential, and time-criticality of affected cargo.
+Severity Agent scores disruption impact on a 1.0-10.0 scale.
 """
 import logging
 from typing import Optional
@@ -10,53 +8,26 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from pydantic import BaseModel, Field
 
 from app.config import get_settings
+from app.graph.network_store import get_all_shipments
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
 
-# ── Output schema ─────────────────────────────────────────────────────────────
 class SeverityOutput(BaseModel):
-    """Structured output from severity scoring LLM call."""
-
-    severity_score: float = Field(
-        ge=1.0, le=10.0,
-        description=(
-            "Impact score 1.0–10.0. "
-            "1-3: Minor disruption, localized effect. "
-            "4-6: Moderate, multi-node impact. "
-            "7-8: Severe, major route/supplier loss. "
-            "9-10: Critical, systemic supply chain failure."
-        ),
-    )
-    reasoning: str = Field(
-        description="Chain-of-thought explaining score factors and key risks"
-    )
-    affected_shipment_count: int = Field(
-        ge=0, description="Estimated number of in-transit shipments impacted"
-    )
-    estimated_delay_days: float = Field(
-        ge=0.0, description="Expected delay in days for affected shipments"
-    )
-    estimated_cost_impact_usd: float = Field(
-        ge=0.0, description="Rough cost impact in USD across all affected shipments"
-    )
+    severity_score: float = Field(ge=1.0, le=10.0)
+    reasoning: str
+    affected_shipment_count: int = Field(ge=0)
+    estimated_delay_days: float = Field(ge=0.0)
+    estimated_cost_impact_usd: float = Field(ge=0.0)
 
 
-# ── Severity Agent ────────────────────────────────────────────────────────────
 class SeverityAgent:
-    """
-    Scores the impact severity of a classified disruption event.
-    Uses the supplier graph context and shipments data to produce grounded scores.
-    """
-
     def __init__(self) -> None:
-        """Initialize LLM with structured output binding."""
         self._structured_llm = None
         self._init_llm()
 
     def _init_llm(self) -> None:
-        """Initialize Gemini LLM."""
         if not settings.google_api_key:
             logger.warning("GOOGLE_API_KEY not set. SeverityAgent will use heuristic fallback.")
             return
@@ -80,28 +51,11 @@ class SeverityAgent:
         raw_signal: str,
         affected_trade_routes: list[str],
     ) -> SeverityOutput:
-        """
-        Score the severity of a disruption event.
-
-        Args:
-            event_type       : Classified event type from ClassifierAgent
-            geography        : Affected geography
-            affected_nodes   : Supplier graph node IDs already mapped
-            raw_signal       : Original signal text
-            affected_trade_routes: Trade routes from ClassifierAgent
-
-        Returns:
-            SeverityOutput with severity_score 1.0–10.0 and full reasoning
-        """
-        # Build network context for LLM
-        from app.graph.seed_data import get_suez_shipments, get_all_shipments
         all_shipments = get_all_shipments()
-        suez_shipments = get_suez_shipments()
 
         context = (
-            f"Supply network: PharmaDistrib India — pharmaceutical cold chain.\n"
+            "Supply network: configured customer supply network.\n"
             f"Total active shipments: {len(all_shipments)}\n"
-            f"Shipments through Suez Canal: {len(suez_shipments)}\n"
             f"Affected network nodes: {', '.join(affected_nodes) if affected_nodes else 'unknown'}\n"
             f"Event type: {event_type}\n"
             f"Affected geography: {geography}\n"
@@ -113,9 +67,8 @@ class SeverityAgent:
 
         prompt = (
             "You are a supply chain risk expert scoring disruption severity. "
-            "Score on scale 1.0 (minor) to 10.0 (catastrophic). "
-            "Pharmaceutical cargo is time-critical and temperature-sensitive — "
-            "factor this into delay and cost impact.\n\n"
+            "Score on a scale from 1.0 (minor) to 10.0 (catastrophic). "
+            "Consider delay risk, exposure breadth, and cost impact.\n\n"
             f"Network context:\n{context}\n\n"
             f"Raw signal:\n{raw_signal[:1000]}"
         )
@@ -123,7 +76,7 @@ class SeverityAgent:
         try:
             result: SeverityOutput = await self._structured_llm.ainvoke(prompt)
             logger.info(
-                "Severity scored: %.1f/10 — affected_shipments=%d delay=%.1fd cost=$%.0f",
+                "Severity scored: %.1f/10 affected_shipments=%d delay=%.1fd cost=$%.0f",
                 result.severity_score,
                 result.affected_shipment_count,
                 result.estimated_delay_days,
@@ -137,12 +90,8 @@ class SeverityAgent:
     def _heuristic_fallback(
         self, event_type: str, geography: str, node_count: int
     ) -> SeverityOutput:
-        """
-        Heuristic severity fallback.
-        Suez Canal disruptions get 9.1 per PRD demo requirements.
-        """
         score_map = {
-            "trade_route_disruption": 9.1,  # Matches demo
+            "trade_route_disruption": 8.0,
             "factory_fire": 7.5,
             "extreme_weather": 6.5,
             "port_congestion": 5.0,
@@ -153,10 +102,10 @@ class SeverityAgent:
             "unknown": 3.0,
         }
         base_score = score_map.get(event_type, 3.0)
-
-        # Suez-specific override for demo
-        if "suez" in geography.lower() and event_type == "trade_route_disruption":
-            base_score = 9.1
+        shipment_count = max(1, len(get_all_shipments()))
+        impacted_count = max(node_count, 1)
+        delay_days = round(max(1.0, base_score * 0.9), 1)
+        cost_impact = float(int(base_score * impacted_count * shipment_count * 2500))
 
         return SeverityOutput(
             severity_score=base_score,
@@ -165,18 +114,16 @@ class SeverityAgent:
                 f"Base score {base_score}/10 for this event type. "
                 f"{node_count} supplier nodes affected."
             ),
-            affected_shipment_count=4 if "suez" in geography.lower() else node_count,
-            estimated_delay_days=14.0 if "suez" in geography.lower() else 5.0,
-            estimated_cost_impact_usd=1807000.0 if "suez" in geography.lower() else 50000.0,
+            affected_shipment_count=impacted_count,
+            estimated_delay_days=delay_days,
+            estimated_cost_impact_usd=cost_impact,
         )
 
 
-# ── Module-level singleton ────────────────────────────────────────────────────
 _severity_instance: Optional[SeverityAgent] = None
 
 
 def get_severity_agent() -> SeverityAgent:
-    """Return singleton SeverityAgent."""
     global _severity_instance
     if _severity_instance is None:
         _severity_instance = SeverityAgent()

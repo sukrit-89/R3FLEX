@@ -97,7 +97,8 @@ Frontend: http://localhost:3000
 1. Open http://localhost:3000 → Landing page
 2. Click **Start free trial** → `/signup` or go to `/login`
 3. Enter any email/password → redirects to `/dashboard`
-4. Click **Trigger Scenario (Suez Blockade)** → fires `POST /disruptions/demo`
+4. Start the frontend from `frontend` with `npm run dev`
+5. Click **Run Live Scan** → fires `POST /disruptions/ingest`
 5. Watch live events stream via WebSocket
 6. If confidence < 85% → Approval Modal appears → click **Execute**
 

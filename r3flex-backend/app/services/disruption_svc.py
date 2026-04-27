@@ -14,10 +14,14 @@ from app.config import get_settings
 from app.engine.confidence import ConfidenceEvaluator
 from app.engine.executor import Executor
 from app.engine.scenario_gen import ScenarioGenerator
+from app.graph.network_store import get_all_shipments
 from app.engine.tradeoff import TradeoffScorer
 from app.models.decision import Decision
 from app.models.disruption import Disruption
 from app.models.scenario import Scenario
+from app.schemas.task import TaskCreate
+from app.services.supplier_svc import SupplierService
+from app.services.task_svc import TaskService
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -33,19 +37,20 @@ class DisruptionService:
     async def process_signal(
         signal: dict,
         db: AsyncSession,
-        company_id: str = "pharma-distrib-india",
+        company_id: str | None = None,
     ) -> Optional[Disruption]:
         """
         Process a raw signal through the full agent + decision pipeline.
 
         Args:
-            signal    : Normalized signal dict (from news_feed/weather_feed/mock_port_data)
+            signal    : Normalized signal dict (from live/manual ingestion sources)
             db        : Async SQLAlchemy session
             company_id: Company identifier
 
         Returns:
             Created Disruption ORM object, or None if processing failed.
         """
+        company_id = company_id or settings.company_id
         raw_text = signal.get("text", signal.get("title", ""))
         if not raw_text:
             logger.warning("Signal has no text content. Skipping.")
@@ -93,6 +98,16 @@ class DisruptionService:
         # ── Step 4: Generate 3 scenarios ──────────────────────────────────────
         scenario_gen = ScenarioGenerator()
         raw_scenarios = await scenario_gen.generate(agent_state)
+        candidate_suppliers = await DisruptionService._find_supplier_candidates(
+            agent_state=agent_state,
+            company_id=company_id,
+            db=db,
+        )
+        raw_scenarios = DisruptionService._enrich_scenarios_with_supplier_context(
+            raw_scenarios=raw_scenarios,
+            agent_state=agent_state,
+            candidate_suppliers=candidate_suppliers,
+        )
 
         # ── Step 5: Score tradeoffs ────────────────────────────────────────────
         scorer = TradeoffScorer()
@@ -161,6 +176,15 @@ class DisruptionService:
             "Disruption %s complete: status=%s confidence=%.2f",
             disruption_id, disruption.status, confidence_result.confidence
         )
+        await DisruptionService._create_operational_tasks(
+            disruption=disruption,
+            agent_state=agent_state,
+            company_id=company_id,
+            auto_executed=exec_result.auto_executed,
+            decision_id=decision_id,
+            candidate_suppliers=candidate_suppliers,
+            db=db,
+        )
 
         return disruption
 
@@ -193,3 +217,155 @@ class DisruptionService:
             .limit(page_size)
         )
         return list(result.scalars().all()), total
+
+    @staticmethod
+    async def _find_supplier_candidates(
+        agent_state: AgentState,
+        company_id: str,
+        db: AsyncSession,
+    ) -> list:
+        affected_nodes = set(agent_state.get("affected_nodes", [])) | set(agent_state.get("cascade_nodes", []))
+        impacted_shipments = [
+            shipment for shipment in get_all_shipments()
+            if any(node in affected_nodes for node in shipment.get("route", []))
+        ]
+        materials = [str(shipment.get("material", "")).strip() for shipment in impacted_shipments if shipment.get("material")]
+        modes = [str(shipment.get("mode", "")).strip() for shipment in impacted_shipments if shipment.get("mode")]
+        return await SupplierService.find_candidates(
+            db=db,
+            materials=materials,
+            modes=modes,
+            company_id=company_id,
+        )
+
+    @staticmethod
+    def _enrich_scenarios_with_supplier_context(
+        raw_scenarios,
+        agent_state: AgentState,
+        candidate_suppliers: list,
+    ):
+        impacted_shipments = [
+            shipment for shipment in get_all_shipments()
+            if shipment.get("id") in set(agent_state.get("affected_shipment_ids", []))
+        ]
+        materials = sorted({
+            str(shipment.get("material")).strip()
+            for shipment in impacted_shipments
+            if shipment.get("material")
+        })
+        modes = sorted({
+            str(shipment.get("mode")).strip()
+            for shipment in impacted_shipments
+            if shipment.get("mode")
+        })
+        top_supplier = candidate_suppliers[0] if candidate_suppliers else None
+        preferred_modes = [
+            entry.get("mode")
+            for entry in getattr(top_supplier, "lane_preferences", [])
+            if isinstance(entry, dict) and entry.get("mode")
+        ] if top_supplier else []
+
+        for option in raw_scenarios:
+            if "backup supplier" in option.label.lower() and top_supplier:
+                option.label = f"Activate backup supplier: {top_supplier.legal_name}"
+                option.description = (
+                    f"Shift replenishment for {', '.join(materials) or 'critical materials'} to "
+                    f"{top_supplier.legal_name} in {top_supplier.country}. "
+                    f"Registered modes: {', '.join(preferred_modes) or 'not specified'}."
+                )
+                option.time_delta_days = max(1.0, round(option.time_delta_days * 0.8, 1))
+                option.risk_score = max(1.0, round(option.risk_score - 0.6, 1))
+            elif "reroute" in option.label.lower() and modes:
+                option.description = (
+                    f"{option.description} Impacted shipment modes: {', '.join(modes)}. "
+                    f"Prioritize alternate lanes that preserve cold-chain handling for {', '.join(materials) or 'affected SKUs'}."
+                )
+            elif "expedite" in option.label.lower() and materials:
+                option.description = (
+                    f"{option.description} Recommended for materials: {', '.join(materials)}."
+                )
+                if "air" in modes:
+                    option.time_delta_days = max(1.0, round(option.time_delta_days * 0.85, 1))
+
+        return raw_scenarios
+
+    @staticmethod
+    async def _create_operational_tasks(
+        disruption: Disruption,
+        agent_state: AgentState,
+        company_id: str,
+        auto_executed: bool,
+        decision_id: uuid.UUID,
+        candidate_suppliers: list,
+        db: AsyncSession,
+    ) -> None:
+        priority = "critical" if (agent_state.get("severity_score") or 0) >= 8 else "high"
+        payloads = [
+            TaskCreate(
+                company_id=company_id,
+                title=f"Triage disruption at {disruption.geography or 'unknown geography'}",
+                description=(
+                    f"Review {disruption.event_type} severity {disruption.severity_score}/10. "
+                    f"Affected nodes: {', '.join(disruption.affected_nodes or []) or 'none'}."
+                ),
+                priority=priority,
+                task_type="triage",
+                status="open",
+                disruption_id=disruption.id,
+                metadata_json={
+                    "decision_id": str(decision_id),
+                    "cascade_nodes": disruption.cascade_nodes or [],
+                },
+            )
+        ]
+
+        if auto_executed:
+            payloads.append(
+                TaskCreate(
+                    company_id=company_id,
+                    title=f"Monitor execution outcome for {disruption.geography or 'disruption'}",
+                    description="Validate ERP updates, ETA changes, and downstream confirmations after automatic execution.",
+                    priority="high",
+                    task_type="execution_monitor",
+                    status="open",
+                    disruption_id=disruption.id,
+                    metadata_json={"decision_id": str(decision_id), "auto_executed": True},
+                )
+            )
+        else:
+            payloads.append(
+                TaskCreate(
+                    company_id=company_id,
+                    title=f"Approve escalation for {disruption.geography or 'disruption'}",
+                    description="Human review required because confidence fell below the auto-execution threshold.",
+                    priority="critical",
+                    task_type="approval",
+                    status="open",
+                    disruption_id=disruption.id,
+                    metadata_json={"decision_id": str(decision_id), "auto_executed": False},
+                )
+            )
+
+        if candidate_suppliers:
+            supplier = candidate_suppliers[0]
+            payloads.append(
+                TaskCreate(
+                    company_id=company_id,
+                    title=f"Confirm backup readiness with {supplier.legal_name}",
+                    description=(
+                        f"Validate material availability and lane readiness with registered supplier "
+                        f"{supplier.supplier_code}."
+                    ),
+                    priority="high",
+                    task_type="supplier_coordination",
+                    status="open",
+                    disruption_id=disruption.id,
+                    supplier_id=supplier.id,
+                    metadata_json={
+                        "materials": supplier.material_profiles,
+                        "lanes": supplier.lane_preferences,
+                    },
+                )
+            )
+
+        await TaskService.create_many(payloads, db)

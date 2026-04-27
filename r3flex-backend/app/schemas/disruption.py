@@ -30,7 +30,7 @@ class DisruptionCreate(BaseModel):
         description="Signal source: 'news', 'weather', 'port', 'manual'",
     )
     company_id: Optional[str] = Field(
-        default="pharma-distrib-india",
+        default=None,
         description="Company identifier for multi-tenant isolation",
     )
 
